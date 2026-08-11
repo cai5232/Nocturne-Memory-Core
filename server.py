@@ -45,12 +45,31 @@ import re
 import unicodedata
 import tempfile
 import threading
-import fcntl
+try:
+    import fcntl as _fcntl
+except ImportError:  # Windows
+    _fcntl = None
+    import msvcrt as _msvcrt
 import uuid
 from datetime import datetime, timedelta, timezone
 from typing import Literal, Optional
 import httpx
 import os as _os
+
+
+def _file_lock(handle, exclusive: bool) -> None:
+    """Cross-platform advisory lock for the small JSON sidecars."""
+    if _fcntl is not None:
+        _fcntl.flock(handle.fileno(), _fcntl.LOCK_EX if exclusive else _fcntl.LOCK_UN)
+        return
+    # msvcrt locks a byte range. Ensure one shared byte exists first.
+    handle.seek(0, os.SEEK_END)
+    if handle.tell() == 0:
+        handle.write("\0")
+        handle.flush()
+    handle.seek(0)
+    mode = _msvcrt.LK_LOCK if exclusive else _msvcrt.LK_UNLCK
+    _msvcrt.locking(handle.fileno(), mode, 1)
 
 
 # --- Ensure same-directory modules can be imported ---
@@ -1796,7 +1815,7 @@ def _update_trail_curation(query: str, node_ref: str, action: str, display_ancho
     os.makedirs(os.path.dirname(lock_path) or ".", exist_ok=True)
     with _TRAIL_CURATION_LOCK:
         with open(lock_path, "a+", encoding="utf-8") as lock_file:
-            fcntl.flock(lock_file.fileno(), fcntl.LOCK_EX)
+            _file_lock(lock_file, True)
             try:
                 data = _load_trail_curations(strict=True)
                 queries = data.setdefault("queries", {})
@@ -1844,7 +1863,7 @@ def _update_trail_curation(query: str, node_ref: str, action: str, display_ancho
                     if isinstance(row, dict) and row.get("hidden") is True
                 )
             finally:
-                fcntl.flock(lock_file.fileno(), fcntl.LOCK_UN)
+                _file_lock(lock_file, False)
     return {
         "query_key": key,
         "query": normalized,
@@ -1911,7 +1930,7 @@ def _update_trail_delta(
     os.makedirs(os.path.dirname(lock_path) or ".", exist_ok=True)
     with _TRAIL_CURATION_LOCK:
         with open(lock_path, "a+", encoding="utf-8") as lock_file:
-            fcntl.flock(lock_file.fileno(), fcntl.LOCK_EX)
+            _file_lock(lock_file, True)
             try:
                 data = _load_trail_curations(strict=True)
                 queries = data.setdefault("queries", {})
@@ -1949,7 +1968,7 @@ def _update_trail_delta(
                     queries.pop(key, None)
                 _save_trail_curations(data)
             finally:
-                fcntl.flock(lock_file.fileno(), fcntl.LOCK_UN)
+                _file_lock(lock_file, False)
     return {
         "query_key": key,
         "query": normalized,
@@ -2108,14 +2127,14 @@ def _mutate_trail_families(mutator):
     os.makedirs(os.path.dirname(lock_path) or ".", exist_ok=True)
     with _TRAIL_FAMILIES_LOCK:
         with open(lock_path, "a+", encoding="utf-8") as lock_file:
-            fcntl.flock(lock_file.fileno(), fcntl.LOCK_EX)
+            _file_lock(lock_file, True)
             try:
                 data = _load_trail_families(strict=True)
                 result = mutator(data)
                 _save_trail_families(data)
                 return result
             finally:
-                fcntl.flock(lock_file.fileno(), fcntl.LOCK_UN)
+                _file_lock(lock_file, False)
 
 
 def _mutate_trail_family(body: dict) -> dict:

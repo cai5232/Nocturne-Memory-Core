@@ -3125,19 +3125,23 @@ async function checkAuth() {
   try {
     const resp = await fetch('/auth/status');
     const data = await resp.json();
-    if (data.setup_needed) {
+    if (resp.ok && data.setup_needed === true) {
       document.getElementById('auth-subtitle').textContent = '首次设置';
       document.getElementById('auth-login-form').style.display = 'none';
       document.getElementById('auth-setup-form').style.display = 'block';
-    } else if (data.authenticated) {
+    } else if (resp.ok && data.authenticated === true) {
       document.getElementById('auth-overlay').style.display = 'none';
-    } else {
+    } else if (resp.ok && data.setup_needed === false) {
       document.getElementById('auth-subtitle').textContent = '请输入访问密码';
       document.getElementById('auth-setup-form').style.display = 'none';
       document.getElementById('auth-login-form').style.display = 'block';
+    } else {
+      throw new Error('auth status unavailable');
     }
   } catch {
-    document.getElementById('auth-overlay').style.display = 'none';
+    document.getElementById('auth-subtitle').textContent = '无法读取初始化状态，请刷新重试';
+    document.getElementById('auth-setup-form').style.display = 'none';
+    document.getElementById('auth-login-form').style.display = 'none';
   }
 }
 
@@ -4757,6 +4761,11 @@ function startNetworkAnim(canvas2, ctx, data) {
   };
 
   function frame() {
+    // Stop burning CPU when Dashboard is hidden or another pane is open.
+    if (document.hidden || document.getElementById('network-view')?.style.display === 'none') {
+      networkAnimId = null;
+      return;
+    }
     const isDarkNow = document.documentElement.dataset.theme === 'nocturne';
     const bgColor = isDarkNow ? '#131a2e' : '#ffffff';
     const labelColor = isDarkNow ? '#c5b890' : '#4a3d44';
