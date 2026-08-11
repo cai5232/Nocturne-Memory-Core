@@ -56,7 +56,7 @@ def build_block(payload: dict, force: bool = False) -> str:
         os.replace(temp, STICKY_PATH)
     if len(text) > MAX_CHARS:
         text = text[: MAX_CHARS - 1].rstrip() + "…"
-    return "Nearfield (recent chat distilled; not full lived memory; verify against history when needed)\n" + text
+    return "Nearfield\n" + text
 
 
 def main() -> int:

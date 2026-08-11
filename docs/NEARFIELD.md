@@ -14,9 +14,6 @@ chat JSONL
   -> Nearfield.md injected once per session on UserPromptSubmit
 ```
 
-Nearfield is **not** a complete transcript or proof of lived experience. Treat it
-as a recent map; consult chat history when exact wording or attribution matters.
-
 ## Privacy
 
 Nearfield is disabled until you run it. It sends sampled chat text to the model

@@ -52,6 +52,7 @@ except ImportError:  # Windows
     import msvcrt as _msvcrt
 import uuid
 from datetime import datetime, timedelta, timezone
+from pathlib import Path
 from typing import Literal, Optional
 import httpx
 import os as _os
@@ -8758,6 +8759,201 @@ async def api_sanctum_thought_from_latent(request):
 # /api/status — system status for Dashboard settings tab
 # /api/status — Dashboard 设置页用系统状态
 # =============================================================
+# ── Nearfield diary ────────────────────────────────────────────
+_NEARFIELD_DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
+
+
+def _nearfield_root() -> Path:
+    configured = (os.environ.get("NOCTURNE_NEARFIELD_DIR") or "").strip()
+    if configured:
+        return Path(configured).expanduser()
+    return Path(config["buckets_dir"]) / "nearfield"
+
+
+def _nearfield_paths():
+    root = _nearfield_root()
+    return root, root / "Nearfield.md", root / "days"
+
+
+def _nearfield_read_current() -> str:
+    _root, current, _days = _nearfield_paths()
+    try:
+        return current.read_text(encoding="utf-8")
+    except OSError:
+        return ""
+
+
+def _nearfield_list_days() -> list[dict]:
+    _root, _current, days_dir = _nearfield_paths()
+    try:
+        days_dir.mkdir(parents=True, exist_ok=True)
+    except OSError:
+        return []
+    rows = []
+    for path in sorted(days_dir.glob("*.md"), reverse=True):
+        date = path.stem
+        if not _NEARFIELD_DATE_RE.match(date):
+            continue
+        try:
+            body = path.read_text(encoding="utf-8")
+            stat = path.stat()
+        except OSError:
+            continue
+        preview = next((line.strip()[:120] for line in body.splitlines() if line.strip() and not line.lstrip().startswith("#")), "")
+        rows.append({"date": date, "chars": len(body), "preview": preview, "mtime": stat.st_mtime})
+    return rows
+
+
+def _nearfield_read_day(date: str) -> str | None:
+    if not _NEARFIELD_DATE_RE.match(date or ""):
+        return None
+    _root, _current, days_dir = _nearfield_paths()
+    try:
+        return (days_dir / f"{date}.md").read_text(encoding="utf-8")
+    except OSError:
+        return None
+
+
+def _nearfield_atomic_write(path: Path, content: str) -> int:
+    if len(content) > 200_000:
+        raise ValueError("content too large")
+    path.parent.mkdir(parents=True, exist_ok=True)
+    text = content if content.endswith("\n") else content + "\n"
+    temporary = path.with_suffix(f".{os.getpid()}.tmp")
+    temporary.write_text(text, encoding="utf-8")
+    os.replace(temporary, path)
+    return len(text)
+
+
+def _nearfield_write_day(date: str, content: str) -> dict:
+    if not _NEARFIELD_DATE_RE.match(date or ""):
+        raise ValueError("date must be YYYY-MM-DD")
+    _root, _current, days_dir = _nearfield_paths()
+    path = days_dir / f"{date}.md"
+    chars = _nearfield_atomic_write(path, content)
+    return {"date": date, "chars": chars}
+
+
+def _nearfield_strip_title(text: str) -> str:
+    return "\n".join(
+        line for line in (text or "").splitlines()
+        if not re.match(r"^#\s*\d{4}-\d{2}-\d{2}\s*$", line.strip())
+    ).strip()
+
+
+def _nearfield_attenuate(text: str, quota: int) -> str:
+    text = _nearfield_strip_title(text)
+    if len(text) <= quota:
+        return text
+    cut = text[:quota]
+    for mark in ("。", "！", "？", ". ", "! ", "? ", "; ", "，", ", "):
+        pos = cut.rfind(mark)
+        if pos >= quota // 2:
+            return cut[: pos + len(mark)].rstrip() + "…"
+    return cut.rstrip() + "…"
+
+
+def _nearfield_assemble(max_days: int = 7) -> str:
+    days = _nearfield_list_days()[:max_days]
+    quotas = [520, 320, 220, 160, 110, 80, 60]
+    parts = ["# Nearfield", ""]
+    for index, row in enumerate(days):
+        body = _nearfield_read_day(row["date"]) or ""
+        body = _nearfield_attenuate(body, quotas[index] if index < len(quotas) else 60)
+        if not body:
+            continue
+        label = "Today" if index == 0 else "Yesterday" if index == 1 else "Earlier"
+        parts.extend([f"## {label} · {row['date']}", body, ""])
+    return "\n".join(parts).rstrip() + "\n"
+
+
+@mcp.custom_route("/api/nearfield/list", methods=["GET"])
+async def api_nearfield_list(request):
+    from starlette.responses import JSONResponse
+    err = _require_auth(request)
+    if err:
+        return err
+    current = _nearfield_read_current()
+    return JSONResponse({"ok": True, "days": _nearfield_list_days(), "current_chars": len(current), "current_exists": bool(current.strip())})
+
+
+@mcp.custom_route("/api/nearfield/day", methods=["GET"])
+async def api_nearfield_day_get(request):
+    from starlette.responses import JSONResponse
+    err = _require_auth(request)
+    if err:
+        return err
+    date = request.query_params.get("date", "")
+    if date in {"current", "rolling", "latest"}:
+        content = _nearfield_read_current()
+        return JSONResponse({"ok": True, "date": "current", "content": content, "chars": len(content), "kind": "rolling"})
+    content = _nearfield_read_day(date)
+    if content is None:
+        return JSONResponse({"ok": False, "error": "not found"}, status_code=404)
+    return JSONResponse({"ok": True, "date": date, "content": content, "chars": len(content), "kind": "day"})
+
+
+@mcp.custom_route("/api/nearfield/day", methods=["POST"])
+async def api_nearfield_day_save(request):
+    from starlette.responses import JSONResponse
+    err = _require_auth(request)
+    if err:
+        return err
+    try:
+        body = await request.json()
+        date = str(body.get("date") or "").strip()
+        content = body.get("content")
+        if not isinstance(content, str):
+            raise ValueError("content required")
+        if date in {"current", "rolling"}:
+            _root, current, _days = _nearfield_paths()
+            chars = _nearfield_atomic_write(current, content)
+            return JSONResponse({"ok": True, "date": "current", "chars": chars, "kind": "rolling"})
+        return JSONResponse({"ok": True, **_nearfield_write_day(date, content), "kind": "day"})
+    except ValueError as exc:
+        return JSONResponse({"ok": False, "error": str(exc)}, status_code=400)
+    except Exception as exc:
+        return JSONResponse({"ok": False, "error": str(exc)}, status_code=500)
+
+
+@mcp.custom_route("/api/nearfield/day", methods=["DELETE"])
+async def api_nearfield_day_delete(request):
+    from starlette.responses import JSONResponse
+    err = _require_auth(request)
+    if err:
+        return err
+    date = request.query_params.get("date", "").strip()
+    if not _NEARFIELD_DATE_RE.match(date):
+        return JSONResponse({"ok": False, "error": "date must be YYYY-MM-DD"}, status_code=400)
+    _root, _current, days_dir = _nearfield_paths()
+    path = days_dir / f"{date}.md"
+    try:
+        path.unlink()
+    except FileNotFoundError:
+        return JSONResponse({"ok": False, "error": "not found"}, status_code=404)
+    except OSError as exc:
+        return JSONResponse({"ok": False, "error": str(exc)}, status_code=500)
+    return JSONResponse({"ok": True, "date": date, "deleted": True})
+
+
+@mcp.custom_route("/api/nearfield/assemble", methods=["POST"])
+async def api_nearfield_assemble(request):
+    from starlette.responses import JSONResponse
+    err = _require_auth(request)
+    if err:
+        return err
+    try:
+        body = await request.json()
+    except Exception:
+        body = {}
+    max_days = max(1, min(int((body or {}).get("max_days") or 7), 14))
+    text = _nearfield_assemble(max_days)
+    if bool((body or {}).get("persist", True)):
+        _root, current, _days = _nearfield_paths()
+        _nearfield_atomic_write(current, text)
+    return JSONResponse({"ok": True, "chars": len(text), "content": text, "persisted": bool((body or {}).get("persist", True))})
+
+
 @mcp.custom_route("/api/status", methods=["GET"])
 async def api_system_status(request):
     """Return detailed system status for the settings panel."""

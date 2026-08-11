@@ -319,7 +319,7 @@ input[type="number"] { font-family: var(--font-number); font-variant-numeric: ol
   top: 0;
   z-index: 25;
   display: grid;
-  grid-template-columns: repeat(9, minmax(0,1fr));
+  grid-template-columns: repeat(10, minmax(0,1fr));
   gap: 0;
   padding: 0 var(--page-pad);
   background: rgba(10,6,3,.76);
@@ -363,6 +363,180 @@ input[type="number"] { font-family: var(--font-number); font-variant-numeric: ol
 .tab.active::before { color: var(--accent-deep); }
 .tab.active::after { transform: scaleX(1); }
 .secondary-tab { display: none; }
+
+/* Nearfield · 近景 diary (Traces sibling, not bucket list) */
+#nearfield-view::before { content: "Nearfield"; }
+.nearfield-layout {
+  display: grid;
+  grid-template-columns: minmax(220px, 280px) minmax(0, 1fr);
+  gap: 1.25rem;
+  min-height: 62vh;
+}
+.nearfield-layout.inject-only {
+  grid-template-columns: 1fr;
+}
+.nearfield-subtabs {
+  display: flex;
+  gap: .4rem;
+  margin: 0 0 1rem;
+  flex-wrap: wrap;
+}
+.nearfield-subtabs button {
+  border: 1px solid var(--line-soft);
+  background: var(--surface-soft);
+  color: var(--ink-soft);
+  padding: .42rem .85rem;
+  font: 400 .72rem/1 var(--font-mono);
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  cursor: pointer;
+  border-radius: 999px;
+}
+.nearfield-subtabs button:hover {
+  border-color: var(--line);
+  color: var(--ink);
+}
+.nearfield-subtabs button.active {
+  background: color-mix(in srgb, var(--accent) 16%, var(--surface));
+  border-color: color-mix(in srgb, var(--accent) 40%, var(--line));
+  color: var(--ink);
+}
+.nearfield-sidebar {
+  border: 1px solid var(--line-soft);
+  background: var(--surface);
+  padding: 1rem .9rem 1.2rem;
+  border-radius: 14px;
+  backdrop-filter: blur(8px);
+}
+.nearfield-kicker {
+  font: 300 .62rem/1.2 var(--font-mono);
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  color: var(--mute);
+  margin-bottom: .85rem;
+}
+.nearfield-day-list {
+  display: flex;
+  flex-direction: column;
+  gap: .35rem;
+  max-height: 68vh;
+  overflow: auto;
+}
+.nearfield-day-btn {
+  text-align: left;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--ink-soft);
+  padding: .7rem .72rem;
+  cursor: pointer;
+  font: 300 .84rem/1.35 var(--font-body);
+  border-radius: 12px;
+}
+.nearfield-day-btn:hover {
+  background: var(--surface-soft);
+  border-color: var(--line-soft);
+}
+.nearfield-day-btn.active {
+  background: color-mix(in srgb, var(--accent) 12%, var(--surface-soft));
+  border-color: color-mix(in srgb, var(--accent) 35%, var(--line-soft));
+  color: var(--ink);
+}
+.nearfield-day-btn .d-date {
+  display: block;
+  font: 500 .78rem/1.2 var(--font-mono);
+  letter-spacing: .04em;
+  margin-bottom: .2rem;
+}
+.nearfield-day-btn .d-preview {
+  display: block;
+  color: var(--mute);
+  font-size: .78rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.nearfield-main {
+  border: 1px solid var(--line-soft);
+  background: var(--surface);
+  border-radius: 14px;
+  padding: 1rem 1.1rem 1.15rem;
+  min-height: 62vh;
+  display: flex;
+  flex-direction: column;
+  gap: .75rem;
+  backdrop-filter: blur(8px);
+}
+.nearfield-toolbar {
+  display: flex;
+  align-items: center;
+  gap: .55rem;
+  flex-wrap: wrap;
+}
+.nearfield-toolbar .nf-title {
+  flex: 1;
+  min-width: 10rem;
+  font: 400 .72rem/1 var(--font-mono);
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+.nearfield-toolbar button {
+  border: 1px solid var(--line-soft);
+  background: var(--surface-soft);
+  color: var(--ink-soft);
+  padding: .4rem .75rem;
+  border-radius: 999px;
+  cursor: pointer;
+  font: 400 .72rem/1 var(--font-body);
+}
+.nearfield-toolbar button:hover {
+  border-color: var(--line);
+  color: var(--ink);
+}
+.nearfield-toolbar button.btn-primary {
+  background: color-mix(in srgb, var(--accent) 18%, var(--surface));
+  border-color: color-mix(in srgb, var(--accent) 42%, var(--line));
+  color: var(--ink);
+}
+.nearfield-toolbar button.btn-danger {
+  color: var(--negative);
+  border-color: color-mix(in srgb, var(--negative) 35%, var(--line-soft));
+}
+.nearfield-editor {
+  flex: 1;
+  min-height: 48vh;
+  width: 100%;
+  resize: vertical;
+  border: 1px solid var(--line-soft);
+  background: color-mix(in srgb, var(--bg-deep) 55%, var(--surface));
+  color: var(--ink);
+  border-radius: 12px;
+  padding: 1rem 1.05rem;
+  font: 400 .95rem/1.65 var(--font-body);
+  outline: none;
+}
+.nearfield-editor:focus {
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--line));
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 12%, transparent);
+}
+.nearfield-status {
+  font: 300 .72rem/1.4 var(--font-mono);
+  color: var(--mute);
+  min-height: 1.1em;
+}
+.nearfield-empty {
+  color: var(--mute);
+  font: 300 .85rem/1.5 var(--font-body);
+  padding: .6rem .2rem;
+}
+@media (max-width: 860px) {
+  .nearfield-layout { grid-template-columns: 1fr; }
+  .nearfield-day-list { max-height: 28vh; flex-direction: row; overflow-x: auto; }
+  .nearfield-day-btn { min-width: 150px; }
+}
+
+
+
 
 /* ============================================================
    Chapter stages / shared editorial forms
@@ -2518,6 +2692,7 @@ html[data-theme="sakura-milk"] ::selection { background: rgba(216,132,159,.28); 
   <div class="tab" data-index="03" data-tab="reverie">Reverie</div>
   <div class="tab" data-index="04" data-tab="desire">Drift</div>
   <div class="tab" data-index="05" data-tab="echoes">Echoes</div>
+  <div class="tab" data-index="06" data-tab="nearfield">Nearfield</div>
   <div class="tab" data-index="07" data-tab="network">Constellations</div>
   <div class="tab" data-index="08" data-tab="import">Fragments</div>
   <div class="tab" data-index="09" data-tab="config">Axis</div>
@@ -2844,6 +3019,32 @@ html[data-theme="sakura-milk"] ::selection { background: rgba(216,132,159,.28); 
 
       <div id="import-errors" style="display:none;margin-top:0.8rem;padding:0.8rem;background:var(--tint-soft);border-left:2px solid var(--negative);font-size:0.72rem;color:var(--negative);max-height:120px;overflow-y:auto;font-family:'JetBrains Mono',monospace;"></div>
     </div>
+  </div>
+</div>
+
+<div class="content" id="nearfield-view" style="display:none">
+  <div class="nearfield-subtabs" id="nearfield-subtabs">
+    <button type="button" class="active" data-nf-mode="diary" onclick="setNearfieldMode('diary')">日记</button>
+    <button type="button" data-nf-mode="inject" onclick="setNearfieldMode('inject')">注入稿</button>
+  </div>
+  <div class="nearfield-layout">
+    <aside class="nearfield-sidebar" id="nearfield-sidebar">
+      <div class="nearfield-kicker" id="nearfield-kicker">Diary · 日更</div>
+      <div class="nearfield-day-list" id="nearfield-day-list">
+        <div class="nearfield-empty">Loading days…</div>
+      </div>
+    </aside>
+    <section class="nearfield-main">
+      <div class="nearfield-toolbar">
+        <span class="nf-title" id="nearfield-title">NEARFIELD</span>
+        <button type="button" onclick="loadNearfieldList(true)">刷新</button>
+        <button type="button" id="nearfield-assemble-btn" onclick="assembleNearfieldRolling()" style="display:none">从日记重滚</button>
+        <button type="button" class="btn-danger" id="nearfield-delete-btn" onclick="deleteNearfieldDay()">删除</button>
+        <button class="btn-primary" type="button" id="nearfield-save-btn" onclick="saveNearfieldDay()">保存</button>
+      </div>
+      <textarea class="nearfield-editor" id="nearfield-editor" spellcheck="false" placeholder="当天日记…"></textarea>
+      <div class="nearfield-status" id="nearfield-status"></div>
+    </section>
   </div>
 </div>
 
@@ -6727,6 +6928,224 @@ function initEvents() {
   }
 }
 
+/* ============================================================
+   Nearfield · 近景 diary (not mixed into Traces bucket list)
+   ============================================================ */
+let nearfieldDays = [];
+let nearfieldCurrentDate = '';
+let nearfieldDirty = false;
+let nearfieldMode = 'diary'; // diary | inject
+
+function setNearfieldStatus(msg, ok) {
+  const el = document.getElementById('nearfield-status');
+  if (!el) return;
+  el.textContent = msg || '';
+  el.style.color = ok === false ? 'var(--negative)' : (ok === true ? 'var(--positive)' : 'var(--mute)');
+}
+
+function setNearfieldMode(mode) {
+  if (nearfieldDirty && !confirm('当前有未保存修改，切换会丢掉编辑区内容。继续？')) return;
+  nearfieldMode = mode === 'inject' ? 'inject' : 'diary';
+  nearfieldDirty = false;
+  document.querySelectorAll('#nearfield-subtabs [data-nf-mode]').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.nfMode === nearfieldMode);
+  });
+  const kicker = document.getElementById('nearfield-kicker');
+  const sidebar = document.getElementById('nearfield-sidebar');
+  const delBtn = document.getElementById('nearfield-delete-btn');
+  const assembleBtn = document.getElementById('nearfield-assemble-btn');
+  const editor = document.getElementById('nearfield-editor');
+  const layout = document.querySelector('#nearfield-view .nearfield-layout');
+  if (nearfieldMode === 'inject') {
+    if (kicker) kicker.textContent = 'Inject · 滚动稿';
+    if (sidebar) sidebar.style.display = 'none';
+    if (layout) layout.classList.add('inject-only');
+    if (delBtn) delBtn.style.display = 'none';
+    if (assembleBtn) assembleBtn.style.display = '';
+    if (editor) editor.placeholder = '滚动注入稿 Nearfield.md …';
+    nearfieldCurrentDate = 'current';
+    openNearfieldDay('current', true);
+  } else {
+    if (kicker) kicker.textContent = 'Diary · 日更';
+    if (sidebar) sidebar.style.display = '';
+    if (layout) layout.classList.remove('inject-only');
+    if (delBtn) delBtn.style.display = '';
+    if (assembleBtn) assembleBtn.style.display = 'none';
+    if (editor) editor.placeholder = '当天日记…';
+    nearfieldCurrentDate = '';
+    loadNearfieldList(true);
+  }
+}
+
+async function loadNearfieldList(forceReloadEditor = false) {
+  const list = document.getElementById('nearfield-day-list');
+  if (!list) return;
+  setNearfieldStatus('读取日期…');
+  try {
+    const res = await authFetch(BASE + '/api/nearfield/list');
+    if (!res) return;
+    const data = await res.json();
+    if (!res.ok || !data.ok) throw new Error(data.error || `HTTP ${res.status}`);
+    nearfieldDays = Array.isArray(data.days) ? data.days : [];
+
+    if (nearfieldMode === 'inject') {
+      list.innerHTML = '';
+      setNearfieldStatus(data.current_exists ? `注入稿 ${data.current_chars || 0} chars` : '还没有注入稿');
+      if (forceReloadEditor || nearfieldCurrentDate !== 'current' || !document.getElementById('nearfield-editor')?.value) {
+        await openNearfieldDay('current', true);
+      }
+      return;
+    }
+
+    // diary mode: only day files, no CURRENT mixed in
+    if (!nearfieldDays.length) {
+      list.innerHTML = '<div class="nearfield-empty">还没有日记。</div>';
+      setNearfieldStatus('0 天');
+      const editor = document.getElementById('nearfield-editor');
+      const title = document.getElementById('nearfield-title');
+      if (forceReloadEditor && editor) {
+        editor.value = '';
+        nearfieldCurrentDate = '';
+        nearfieldDirty = false;
+        if (title) title.textContent = 'NEARFIELD · DIARY';
+      }
+      return;
+    }
+
+    list.innerHTML = nearfieldDays.map(d => {
+      const active = (nearfieldCurrentDate || nearfieldDays[0].date) === d.date ? 'active' : '';
+      const prev = d.preview || `${d.chars || 0} chars`;
+      return `<button type="button" class="nearfield-day-btn ${active}" data-nf-date="${esc(d.date)}" onclick="openNearfieldDay('${esc(d.date)}')">
+          <span class="d-date">${esc(d.date)}</span>
+          <span class="d-preview">${esc(prev)}</span>
+        </button>`;
+    }).join('');
+    setNearfieldStatus(`${nearfieldDays.length} 天日记`);
+    const pick = nearfieldCurrentDate && nearfieldDays.some(d => d.date === nearfieldCurrentDate)
+      ? nearfieldCurrentDate
+      : nearfieldDays[0].date;
+    if (pick && (forceReloadEditor || !nearfieldCurrentDate || !document.getElementById('nearfield-editor')?.value)) {
+      await openNearfieldDay(pick, true);
+    } else {
+      document.querySelectorAll('.nearfield-day-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.nfDate === nearfieldCurrentDate);
+      });
+    }
+  } catch (e) {
+    list.innerHTML = `<div class="nearfield-empty">近景读不到 · ${esc(e.message || e)}</div>`;
+    setNearfieldStatus(String(e.message || e), false);
+  }
+}
+
+async function openNearfieldDay(date, skipDirtyCheck = false) {
+  if (!skipDirtyCheck && nearfieldDirty && nearfieldCurrentDate && nearfieldCurrentDate !== date) {
+    if (!confirm('未保存的修改会丢掉，继续切换？')) return;
+  }
+  const editor = document.getElementById('nearfield-editor');
+  const title = document.getElementById('nearfield-title');
+  if (!editor) return;
+  setNearfieldStatus('读取正文…');
+  try {
+    const res = await authFetch(BASE + '/api/nearfield/day?date=' + encodeURIComponent(date));
+    if (!res) return;
+    const data = await res.json();
+    if (!res.ok || !data.ok) throw new Error(data.error || `HTTP ${res.status}`);
+    nearfieldCurrentDate = data.date || date;
+    nearfieldDirty = false;
+    editor.value = data.content || '';
+    if (title) {
+      title.textContent = nearfieldCurrentDate === 'current'
+        ? 'NEARFIELD · INJECT'
+        : `NEARFIELD · ${nearfieldCurrentDate}`;
+    }
+    document.querySelectorAll('.nearfield-day-btn').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.nfDate === nearfieldCurrentDate);
+    });
+    setNearfieldStatus(`${(data.content || '').length} chars · 可编辑`, true);
+  } catch (e) {
+    setNearfieldStatus(String(e.message || e), false);
+  }
+}
+
+async function saveNearfieldDay() {
+  const editor = document.getElementById('nearfield-editor');
+  if (!editor || !nearfieldCurrentDate) {
+    setNearfieldStatus('没有可保存的日期', false);
+    return;
+  }
+  setNearfieldStatus('保存中…');
+  try {
+    const res = await authFetch(BASE + '/api/nearfield/day', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ date: nearfieldCurrentDate, content: editor.value }),
+    });
+    if (!res) return;
+    const data = await res.json();
+    if (!res.ok || !data.ok) throw new Error(data.error || `HTTP ${res.status}`);
+    nearfieldDirty = false;
+    setNearfieldStatus(`已保存 · ${data.chars || editor.value.length} chars`, true);
+    await loadNearfieldList(false);
+  } catch (e) {
+    setNearfieldStatus(String(e.message || e), false);
+  }
+}
+
+async function deleteNearfieldDay() {
+  if (!nearfieldCurrentDate || nearfieldCurrentDate === 'current') {
+    setNearfieldStatus('注入稿请用手改；日更才能删', false);
+    return;
+  }
+  if (!confirm(`删除日记 ${nearfieldCurrentDate}？不可恢复。`)) return;
+  setNearfieldStatus('删除中…');
+  try {
+    const res = await authFetch(BASE + '/api/nearfield/day?date=' + encodeURIComponent(nearfieldCurrentDate), {
+      method: 'DELETE',
+    });
+    if (!res) return;
+    const data = await res.json();
+    if (!res.ok || !data.ok) throw new Error(data.error || `HTTP ${res.status}`);
+    nearfieldDirty = false;
+    nearfieldCurrentDate = '';
+    const editor = document.getElementById('nearfield-editor');
+    if (editor) editor.value = '';
+    setNearfieldStatus(`已删除 ${data.date}`, true);
+    await loadNearfieldList(true);
+  } catch (e) {
+    setNearfieldStatus(String(e.message || e), false);
+  }
+}
+
+async function assembleNearfieldRolling() {
+  if (nearfieldDirty && !confirm('未保存修改会被重滚结果覆盖，继续？')) return;
+  setNearfieldStatus('从日记衰减重滚…');
+  try {
+    const res = await authFetch(BASE + '/api/nearfield/assemble', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ persist: true, max_days: 7 }),
+    });
+    if (!res) return;
+    const data = await res.json();
+    if (!res.ok || !data.ok) throw new Error(data.error || `HTTP ${res.status}`);
+    const editor = document.getElementById('nearfield-editor');
+    if (editor) editor.value = data.content || '';
+    nearfieldCurrentDate = 'current';
+    nearfieldDirty = false;
+    setNearfieldStatus(`已重滚注入稿 · ${data.chars || 0} chars`, true);
+  } catch (e) {
+    setNearfieldStatus(String(e.message || e), false);
+  }
+}
+
+(function bindNearfieldEditor() {
+  const editor = document.getElementById('nearfield-editor');
+  if (!editor || editor.dataset.nfBound) return;
+  editor.dataset.nfBound = '1';
+  editor.addEventListener('input', () => { nearfieldDirty = true; });
+})();
+
+
 function switchChapter(target, options = {}) {
   const visibleTarget = target === 'settings' ? 'config' : target;
   if (target !== 'network') {
@@ -6736,7 +7155,7 @@ function switchChapter(target, options = {}) {
   document.querySelectorAll('.tab').forEach(t => {
     t.classList.toggle('active', t.dataset.tab === visibleTarget);
   });
-  ['list','breath','reverie','network','config','import','settings','desire','echoes'].forEach(v => {
+  ['list','breath','reverie','network','config','import','settings','desire','echoes','nearfield'].forEach(v => {
     const el = document.getElementById(v + '-view');
     if (el) el.style.display = target === v ? '' : 'none';
   });
@@ -6750,6 +7169,7 @@ function switchChapter(target, options = {}) {
   if (target === 'settings') loadSettingsStatus();
   if (target === 'desire') loadDesire();
   if (target === 'echoes') loadEchoes();
+  if (target === 'nearfield') setNearfieldMode(nearfieldMode);
   if (target === 'list') loadMarginalia();
   if (options.scroll !== false) {
     document.getElementById('chapter-index').scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
