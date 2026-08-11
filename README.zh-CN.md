@@ -48,6 +48,7 @@ Ombre Brain 仍是独立项目；两套系统目前拥有不同的范围与功�
 - Thought Pool、可审核潜流碎片与有来源的 dream 生成
 - Trails / Constellations，以及显式的 Delta / Family 关系
 - 可选的向量、模型辅助分析、压缩、导入与自然归档 / 衰减
+- 可选 **Nearfield**：近期对话每日脱水成第一人称近景，按天动态衰减，并在 `UserPromptSubmit` 每个会话注入一次
 
 Dashboard 中的 Breath、Reverie、Constellations、Echoes、Drift 与 Axis 等视图都属于内置 UI。
 
@@ -60,7 +61,7 @@ Dashboard 中的 Breath、Reverie、Constellations、Echoes、Drift 与 Axis 等
 ## 环境要求
 
 - **Python 3.11+**（推荐 3.12，与 CI 一致）
-- 可选：OpenAI 兼容 API Key（语义打标 / 向量）
+- 可选：OpenAI 兼容 API Key（语义打标 / 向量 / Nearfield 日更脱水）
 
 ## 快速开始
 
@@ -104,6 +105,8 @@ HTTP 客户端请连接 `http://localhost:8000/mcp`。
 
 记忆是带 YAML frontmatter 的普通 Markdown 文件。SQLite / JSON 侧车保存向量与可选连续性层。
 基础写入与检索不依赖模型 Key；配置 OpenAI 兼容接口后，可启用语义分析、压缩、向量与生成能力。
+
+近期生活层见 [`docs/NEARFIELD.md`](docs/NEARFIELD.md)。它默认关闭；对话账本与生成日记应保存在仓库之外。
 
 参见：
 

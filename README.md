@@ -62,6 +62,8 @@ not that the continuity system is incomplete. After installation it provides:
 - Trails / Constellations with explicit Delta and Family relationships
 - optional embeddings, model-assisted analysis, compression, import, and
   natural archival / decay
+- optional **Nearfield**: daily first-person distillation of recent chat, rolling
+  attenuation across days, and once-per-session `UserPromptSubmit` injection
 
 Dashboard views including Breath, Reverie, Constellations, Echoes, Drift, and
 Axis panes are part of the bundled UI.
@@ -132,6 +134,9 @@ semantic analysis, compression, embeddings, and generative features.
 See [`config.example.yaml`](config.example.yaml),
 [`ENV_VARS.md`](ENV_VARS.md), and
 [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
+
+For the optional recent-life layer, see [`docs/NEARFIELD.md`](docs/NEARFIELD.md).
+It is opt-in and keeps generated diaries and chat ledgers outside the repository.
 
 ## Security
 

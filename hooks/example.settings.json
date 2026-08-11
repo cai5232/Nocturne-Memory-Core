@@ -1,0 +1,15 @@
+{
+  "hooks": {
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/absolute/path/.venv/bin/python /absolute/path/Nocturne-Memory-Core/hooks/nocturne_nearfield.py",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}
