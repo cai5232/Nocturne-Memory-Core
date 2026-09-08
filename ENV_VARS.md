@@ -10,6 +10,9 @@
 | `OMBRE_API_KEY` | optional OpenAI-compatible model key | empty |
 | `OMBRE_BASE_URL` | optional common API base URL | config file |
 | `OMBRE_MODEL` | chat/compression model | config file |
+| `OMBRE_EMBEDDING_API_KEY` | optional separate OpenAI-compatible embedding key; falls back to `OMBRE_API_KEY` | empty |
+| `OMBRE_EMBEDDING_BASE_URL` | optional separate embedding API base URL | dehydration base URL |
+| `OMBRE_EMBEDDING_MODEL` | embedding model | config file |
 | `OMBRE_API_PASSWORD` | Dashboard and administrative API password | first-run setup |
 
 `OMBRE_DASHBOARD_PASSWORD` remains a compatibility alias for the password.
