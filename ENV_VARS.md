@@ -14,6 +14,7 @@
 | `OMBRE_EMBEDDING_BASE_URL` | optional separate embedding API base URL | dehydration base URL |
 | `OMBRE_EMBEDDING_MODEL` | embedding model | config file |
 | `OMBRE_API_PASSWORD` | Dashboard and administrative API password | first-run setup |
+| `OMBRE_NOOK_API_TOKEN` | dedicated Bearer secret for Nook's direct REST integration; independent of MCP | empty (integration disabled) |
 
 `OMBRE_DASHBOARD_PASSWORD` remains a compatibility alias for the password.
 
