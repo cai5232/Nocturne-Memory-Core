@@ -6466,7 +6466,7 @@ async def api_nook_health(request):
 
 @mcp.custom_route("/api/integrations/nook/recall", methods=["POST"])
 async def api_nook_recall(request):
-    """Recall core and query-related memories for Nook without an MCP session."""
+    """Return only strongly query-related memories for Nook's direct HTTP client."""
     from starlette.responses import JSONResponse
     err = _require_nook_api_token(request)
     if err:
@@ -6483,15 +6483,72 @@ async def api_nook_recall(request):
     if len(query) > 800:
         return JSONResponse({"error": "query is too long"}, status_code=400)
     try:
-        limit = max(1, min(20, int(body.get("limit") or 8)))
+        limit = max(1, min(8, int(body.get("limit") or 4)))
     except (TypeError, ValueError):
         return JSONResponse({"error": "limit must be an integer"}, status_code=400)
     try:
-        core, related = await asyncio.gather(breath(), trace(query=query, limit=limit))
+        # `trace()` is intentionally a drawer-browsing tool and can return
+        # unrelated recent memories. It is not suitable for conversational
+        # recall. Here we require direct lexical overlap *and* a meaningful
+        # topic score before a bucket reaches Nook.
+        raw_terms = re.findall(r"[\u4e00-\u9fff]{2,}|[A-Za-z0-9_'-]{3,}", query.lower())
+        terms = set()
+        for chunk in raw_terms:
+            if re.fullmatch(r"[\u4e00-\u9fff]+", chunk):
+                terms.update(chunk[index:index + 2] for index in range(len(chunk) - 1))
+                terms.update(chunk[index:index + 3] for index in range(len(chunk) - 2))
+            else:
+                terms.add(chunk)
+
+        # Short greetings and vague acknowledgements should not manufacture a
+        # memory hit. Nook still calls this endpoint every turn, but gets an
+        # empty contextual result when there is nothing solid to retrieve.
+        if len(terms) < 2:
+            return JSONResponse({"core": "", "related": "", "surfaced": "", "matches": []})
+
+        candidates = await bucket_mgr.list_all(include_archive=False)
+        matched = []
+        for bucket in candidates:
+            meta = bucket.get("metadata", {})
+            searchable = " ".join([
+                str(meta.get("name", "")),
+                " ".join(str(tag) for tag in meta.get("tags", [])),
+                " ".join(str(domain) for domain in meta.get("domain", [])),
+                strip_wikilinks(bucket.get("content", "")),
+            ]).lower()
+            hits = sorted(term for term in terms if term in searchable)
+            has_specific_hit = any(len(term) >= 3 for term in hits)
+            if len(hits) < 2 and not has_specific_hit:
+                continue
+            topic_score = bucket_mgr._calc_topic_score(query, bucket) * 100
+            relevance = min(100.0, topic_score + min(18.0, len(hits) * 6.0))
+            if relevance < 56.0:
+                continue
+            matched.append((relevance, hits, bucket))
+
+        matched.sort(key=lambda item: item[0], reverse=True)
+        selected = matched[:limit]
+        related_parts = []
+        match_summaries = []
+        for relevance, hits, bucket in selected:
+            content = " ".join(strip_wikilinks(bucket.get("content", "")).split())
+            if not content:
+                continue
+            name = str(bucket.get("metadata", {}).get("name") or "记忆")
+            related_parts.append(f"〔{name}〕{content[:900]}")
+            match_summaries.append({"name": name, "score": round(relevance, 1), "hits": hits})
+
+        related = "\n\n".join(related_parts)
+        # The prompt may receive a strong match, while the visible pill stays
+        # intentionally rarer: it only appears for a very clear top match.
+        surfaced = ""
+        if selected and related_parts and selected[0][0] >= 72.0 and len(selected[0][1]) >= 2:
+            surfaced = related_parts[0]
         return JSONResponse({
-            "core": core,
+            "core": "",
             "related": related,
-            "surfaced": related if related and related != "null" else core,
+            "surfaced": surfaced,
+            "matches": match_summaries,
         })
     except Exception as e:
         logger.error(f"Nook direct recall failed: {type(e).__name__}: {e}")
