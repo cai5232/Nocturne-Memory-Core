@@ -6499,6 +6499,16 @@ async def api_nook_recall(request):
                 terms.update(chunk[index:index + 3] for index in range(len(chunk) - 2))
             else:
                 terms.add(chunk)
+        # These are conversational glue rather than memory subjects. Removing
+        # them prevents a vague sentence such as “我想问你一个问题” from
+        # matching old memories solely through everyday phrasing.
+        terms.difference_update({
+            "你好", "您好", "谢谢", "好的", "好吧", "可以", "没事", "没有",
+            "我们", "你们", "他们", "这个", "那个", "什么", "怎么", "就是",
+            "然后", "因为", "所以", "现在", "今天", "昨天", "明天", "一下",
+            "真的", "觉得", "知道", "是不是", "我想", "想问", "问你", "一个",
+            "问题", "告诉", "说说", "聊天", "时候",
+        })
 
         # Short greetings and vague acknowledgements should not manufacture a
         # memory hit. Nook still calls this endpoint every turn, but gets an
