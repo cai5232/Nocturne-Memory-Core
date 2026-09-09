@@ -6531,8 +6531,15 @@ async def api_nook_recall(request):
             if len(hits) < 2 and not has_specific_hit:
                 continue
             topic_score = bucket_mgr._calc_topic_score(query, bucket) * 100
-            relevance = min(100.0, topic_score + min(18.0, len(hits) * 6.0))
-            if relevance < 56.0:
+            # Topic scoring is deliberately conservative and can be zero for
+            # short Chinese phrases even when their characters match exactly.
+            # Lexical overlap is therefore a valid independent signal here.
+            # It keeps vague chat out (the earlier two-hit gate remains), but
+            # lets an explicitly saved fact be found again verbatim.
+            longest_hit = max((len(term) for term in hits), default=0)
+            lexical_score = min(82.0, len(hits) * 16.0 + max(0, longest_hit - 2) * 8.0)
+            relevance = min(100.0, max(topic_score, lexical_score))
+            if relevance < 48.0:
                 continue
             matched.append((relevance, hits, bucket))
 
