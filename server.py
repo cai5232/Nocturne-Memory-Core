@@ -3898,6 +3898,22 @@ def _require_auth(request):
     return None
 
 
+def _require_nook_api_token(request):
+    """Authenticate Nook's server-to-server REST bridge independently of MCP."""
+    from starlette.responses import JSONResponse
+    expected = os.environ.get("OMBRE_NOOK_API_TOKEN", "").strip()
+    if not expected:
+        return JSONResponse(
+            {"error": "Nook direct API is not configured"},
+            status_code=503,
+        )
+    authorization = request.headers.get("authorization", "")
+    scheme, _, supplied = authorization.partition(" ")
+    if scheme.lower() != "bearer" or not hmac.compare_digest(supplied.strip(), expected):
+        return JSONResponse({"error": "Unauthorized"}, status_code=401)
+    return None
+
+
 # --- Auth endpoints ---
 @mcp.custom_route("/auth/status", methods=["GET"])
 async def auth_status(request):
@@ -6436,6 +6452,89 @@ async def api_search(request):
         return JSONResponse(result)
     except Exception as e:
         return JSONResponse({"error": str(e)}, status_code=500)
+
+
+@mcp.custom_route("/api/integrations/nook/health", methods=["GET"])
+async def api_nook_health(request):
+    """Health check for Nook's direct REST integration (not MCP)."""
+    from starlette.responses import JSONResponse
+    err = _require_nook_api_token(request)
+    if err:
+        return err
+    return JSONResponse({"ok": True, "mode": "direct-http"})
+
+
+@mcp.custom_route("/api/integrations/nook/recall", methods=["POST"])
+async def api_nook_recall(request):
+    """Recall core and query-related memories for Nook without an MCP session."""
+    from starlette.responses import JSONResponse
+    err = _require_nook_api_token(request)
+    if err:
+        return err
+    try:
+        body = await request.json()
+    except Exception:
+        return JSONResponse({"error": "Invalid JSON"}, status_code=400)
+    if not isinstance(body, dict):
+        return JSONResponse({"error": "JSON body must be an object"}, status_code=400)
+    query = str(body.get("query") or "").strip()
+    if not query:
+        return JSONResponse({"error": "query is required"}, status_code=400)
+    if len(query) > 800:
+        return JSONResponse({"error": "query is too long"}, status_code=400)
+    try:
+        limit = max(1, min(20, int(body.get("limit") or 8)))
+    except (TypeError, ValueError):
+        return JSONResponse({"error": "limit must be an integer"}, status_code=400)
+    try:
+        core, related = await asyncio.gather(breath(), trace(query=query, limit=limit))
+        return JSONResponse({
+            "core": core,
+            "related": related,
+            "surfaced": related if related and related != "null" else core,
+        })
+    except Exception as e:
+        logger.error(f"Nook direct recall failed: {type(e).__name__}: {e}")
+        return JSONResponse({"error": "Memory recall failed"}, status_code=500)
+
+
+@mcp.custom_route("/api/integrations/nook/memories", methods=["POST"])
+async def api_nook_store_memory(request):
+    """Store one Nook memory through the same internal path as hold, without MCP."""
+    from starlette.responses import JSONResponse
+    err = _require_nook_api_token(request)
+    if err:
+        return err
+    try:
+        body = await request.json()
+    except Exception:
+        return JSONResponse({"error": "Invalid JSON"}, status_code=400)
+    if not isinstance(body, dict):
+        return JSONResponse({"error": "JSON body must be an object"}, status_code=400)
+    content = str(body.get("content") or "").strip()
+    if not content:
+        return JSONResponse({"error": "content is required"}, status_code=400)
+    if len(content) > 3500:
+        return JSONResponse({"error": "content is too long"}, status_code=400)
+    kind = str(body.get("kind") or "memory").strip().lower()
+    if kind not in {"memory", "feel", "writing", "unresolved", "window"}:
+        return JSONResponse({"error": "invalid kind"}, status_code=400)
+    tags = str(body.get("tags") or "nook,dialogue,auto").strip()
+    try:
+        importance = max(1, min(10, int(body.get("importance") or 5)))
+    except (TypeError, ValueError):
+        return JSONResponse({"error": "importance must be an integer"}, status_code=400)
+    try:
+        result = await hold(
+            content=content,
+            kind=kind,
+            tags=tags,
+            importance=importance,
+        )
+        return JSONResponse({"ok": True, "message": result})
+    except Exception as e:
+        logger.error(f"Nook direct memory store failed: {type(e).__name__}: {e}")
+        return JSONResponse({"error": "Memory store failed"}, status_code=500)
 
 
 @mcp.custom_route("/api/network", methods=["GET"])
