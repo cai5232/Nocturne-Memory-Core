@@ -101,6 +101,16 @@ open http://localhost:8000/dashboard
 
 HTTP 客户端请连接 `http://localhost:8000/mcp`。
 
+## Nook 后端直连（不经过 MCP）
+
+设置 `OMBRE_NOOK_API_TOKEN` 后，Nocturne 会开放仅供服务器之间使用的接口：
+
+- `GET /api/integrations/nook/health`
+- `POST /api/integrations/nook/recall`
+- `POST /api/integrations/nook/memories`
+
+请求必须携带 `Authorization: Bearer <OMBRE_NOOK_API_TOKEN>`。Nook 每轮会主动读取记忆，并在需要时主动写入；这一链路不创建 MCP 会话，原有 `/mcp` 可继续给其他客户端使用。
+
 ## 存储与模型
 
 记忆是带 YAML frontmatter 的普通 Markdown 文件。SQLite / JSON 侧车保存向量与可选连续性层。
